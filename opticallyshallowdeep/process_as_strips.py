@@ -19,6 +19,21 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from .make_vertical_strips import make_vertical_strips
 
+# Use GPU if available
+physical_devices = tf.config.list_physical_devices('GPU')
+
+if physical_devices:
+    try:
+        # Enable memory growth for all GPUs
+        for gpu in physical_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print("Memory growth enabled for all GPUs")
+        tf_device = '/gpu'
+    except RuntimeError as e:
+        print("Error:", e)
+else:
+    tf_device = '/cpu:0'
+
 def process_as_strips (full_img, image_path, if_SR, model_path, selected_columns, model_columns, file_in, cloud_list):
     striplist=make_vertical_strips(full_img) #create a list of strips with overlap
     RGBlist=[]
@@ -330,7 +345,7 @@ def load_model_and_predict_pixels(value_list, model_path, cord_list, if_SR):
     for chunk_value, chunk_cord in zip(chunks_value, chunks_cord):
         value_arr= (np.array(chunk_value)/10000).astype('float16')
         df = pd.DataFrame(value_arr)
-        with tf.device('/cpu:0'):
+        with tf.device(tf_device):
             pred_proba = loaded_model.predict_on_batch(df)#predprob in chunk
         pred_proba_np = np.array(pred_proba)
         con_1 = (pred_proba_np * 100).astype(int)#get our confidence in the way we like it
@@ -359,22 +374,22 @@ def load_tf_model(model_path, if_SR):
 
 def d6_model(u1,LR): # the last tested. good for more data.
     INPUT=Input(shape=(20,))
-    d1=Dense(u1, activation='LeakyReLU')(INPUT)
-    d2=Dense(u1, activation='LeakyReLU')(d1)
-    d3=Dense(u1, activation='LeakyReLU')(d2)
-    d4=Dense(u1, activation='LeakyReLU')(d3)
-    d5=Dense(u1, activation='LeakyReLU')(d4)
-    d6=Dense(u1, activation='LeakyReLU')(d5)
+    d1=Dense(u1, activation='leaky_relu')(INPUT)
+    d2=Dense(u1, activation='leaky_relu')(d1)
+    d3=Dense(u1, activation='leaky_relu')(d2)
+    d4=Dense(u1, activation='leaky_relu')(d3)
+    d5=Dense(u1, activation='leaky_relu')(d4)
+    d6=Dense(u1, activation='leaky_relu')(d5)
     d7=Dense(1, activation='sigmoid')(d6)
     model=Model(inputs=[INPUT], outputs=[d7])
     return model
 
 def d4_model(u1,LR): # the last tested. good for more data.
     INPUT=Input(shape=(13,))
-    d1=Dense(u1, activation='LeakyReLU')(INPUT)
-    d2=Dense(u1, activation='LeakyReLU')(d1)
-    d3=Dense(u1, activation='LeakyReLU')(d2)
-    d4=Dense(u1, activation='LeakyReLU')(d3)
+    d1=Dense(u1, activation='leaky_relu')(INPUT)
+    d2=Dense(u1, activation='leaky_relu')(d1)
+    d3=Dense(u1, activation='leaky_relu')(d2)
+    d4=Dense(u1, activation='leaky_relu')(d3)
     d5=Dense(1, activation='sigmoid')(d4)
     model=Model(inputs=[INPUT], outputs=[d5])
     return model
