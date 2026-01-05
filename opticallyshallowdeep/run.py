@@ -14,7 +14,11 @@ from .make_vertical_strips import make_vertical_strips
 from .cloud_mask import cloud_mask
 
 def run(file_L1C, folder_out, file_L2R = None, to_log=True):
-    
+    # Remove trailing slash if necessary
+    # Otherwise, os.path.basename may return an empty string
+    if file_L1C.endswith('/') or file_L1C.endswith('\\'):
+        file_L1C = file_L1C[:-1]
+
     ### Check the two 
     if not os.path.exists(file_L1C):
         sys.exit('file_L1C does not exist: ' + str(file_L1C))
@@ -52,7 +56,7 @@ def run(file_L1C, folder_out, file_L2R = None, to_log=True):
     
     # Metadata
     print('\n=== ENVIRONMENT ===')
-    print('OSD version: ' + str(version('opticallyshallowdeep')))
+    #print('OSD version: ' + str(version('opticallyshallowdeep')))
     print('Start time: ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
     print('file_L1C: ' + str(file_L1C))
     print('file_L2R: ' + str(file_L2R))
