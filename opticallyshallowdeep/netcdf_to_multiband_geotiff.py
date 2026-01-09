@@ -26,9 +26,14 @@ def netcdf_to_multiband_geotiff(netcdf_file, folder_out):
         with nc4.Dataset(netcdf_file, "r") as nc:
             wkt = nc.variables['transverse_mercator'].getncattr('crs_wkt')
             sensor = nc.getncattr('sensor')
-            global_dims = nc.getncattr('global_dims')
-            height, width = global_dims.astype(int)
-            
+            height = nc.dimensions['y'].size 
+            width = nc.dimensions['x'].size
+            #Get bounds
+            west = nc.variables['x'][:].min()
+            east = nc.variables['x'][:].max()
+            north = nc.variables['y'][:].max()
+            south = nc.variables['y'][:].min()
+
             # Sensor-specific band configuration
             if sensor in ['S2A_MSI', 'S2B_MSI']:
                 bands = [443,492,560,665,704,740,783,833,865,1614,2202] if sensor == 'S2A_MSI' else [442,492,559,665,704,739,780,833,864,1610,2186]
@@ -43,30 +48,10 @@ def netcdf_to_multiband_geotiff(netcdf_file, folder_out):
                 ar[np.isnan(ar)] = value_for_nodata
                 data_array[i] = ar.astype('int16')
             
-            lat = nc.variables['lat'][:,:]
-            lon = nc.variables['lon'][:,:]
         
         epsg_code = find_epsg(wkt)
-        
-        # Initialize the projections
-        
-        # proj_latlon = pyproj.Proj(proj='latlong', datum='WGS84')
-        # proj_utm = pyproj.Proj('epsg:' + str(epsg_code))
-        # xmin, ymin = pyproj.transform(proj_latlon, proj_utm, lon[10979,0], lat[10979,0])
-        # xmax, ymax = pyproj.transform(proj_latlon, proj_utm, lon[0,10979], lat[0,10979])
-
-        proj_latlon = pyproj.CRS(proj='latlong', datum='WGS84')
-        proj_utm = pyproj.CRS('epsg:' + str(epsg_code))
-        
-        transformer = pyproj.Transformer.from_crs(proj_latlon, proj_utm)
-        
-        # Transform the latitude and longitude to the target projection 
-        # For this, find the min/max coordinates in the projected system
-        xmin, ymin = transformer.transform(lon[10979,0], lat[10979,0])
-        xmax, ymax = transformer.transform(lon[0,10979], lat[0,10979])
-                
-        transform_ = from_origin(round(xmin-5,-1), round(ymax+5,-1), 10, 10)
-        
+        transform = rasterio.transform.from_bounds(west, south,  east, north, width, height)
+                      
         with rasterio.open(
             output_geotiff_file, 
             'w', 
@@ -77,7 +62,7 @@ def netcdf_to_multiband_geotiff(netcdf_file, folder_out):
             dtype=rasterio.int16,
             nodata = value_for_nodata, 
             crs = CRS.from_epsg(epsg_code),
-            transform=transform_
+            transform=transform
         ) as dst:
             for i in range(len(bands)):
                 dst.write(data_array[i,:,:], i+1)

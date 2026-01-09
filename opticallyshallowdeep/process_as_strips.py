@@ -79,7 +79,7 @@ def correct_baseline(img,file_path, if_SR, file_in):
         # Open the NetCDF file
         with nc4.Dataset(file_in, "r") as nc:
             tile_code = nc.getncattr('tile_code')
-            img_name = tile_code[1:]
+            img_name = tile_code.split('_')[2][1:]  # Extract the tile code from the attribute e.g: N0400_R054_T19VDF
             
         imgf = img
         correction = 0

@@ -2,8 +2,40 @@ import os, sys
 import rasterio
 import numpy as np
 from scipy import ndimage
+import omnicloudmask
+import torch
 
-def cloud_mask(file_L1C, buffer_size = 8):
+def get_default_gpu():
+    if torch.cuda.is_available():
+        free_memory = []
+        for i in range(torch.cuda.device_count()):
+            props = torch.cuda.get_device_properties(i)
+            free_memory.append((i, props.total_memory - torch.cuda.memory_allocated(i)))
+        default_gpu = max(free_memory, key=lambda x: x[1])[0]
+        return torch.device(f'cuda:{default_gpu}')
+    else:
+        return torch.device('cpu') 
+
+def cloud_mask(L2R_image_path, buffer_size = 8):
+    """Use OmniCloudMask to generate cloud mask from assembled multiband image."""
+    print('Making cloud mask...')
+    
+    # Load the multiband image
+    with rasterio.open(L2R_image_path) as src:
+        band_indices = [3,2,7]  # B4, B3, B8 for Sentinel-2
+        band_data = np.stack([src.read(band) for band in band_indices], axis=0)  # Shape: (3, height, width)
+        nodata_value = src.nodata
+        valid_mask = np.all(band_data != nodata_value, axis=0)
+
+        torch_device = get_default_gpu()
+        cloud_mask = omnicloudmask.predict_from_array(band_data, batch_size=16, inference_dtype='bf16', inference_device=torch.device(torch_device), no_data_value=nodata_value)
+        cloud_mask = np.squeeze((cloud_mask > 0).astype(np.uint8)) #Put thick, thin and shadows together
+        struct1 = ndimage.generate_binary_structure(2, 1)
+        mask_cloud_buffered = ndimage.binary_dilation(cloud_mask, structure=struct1,iterations=buffer_size, mask=valid_mask).astype(cloud_mask.dtype)
+    print('Done')
+    return mask_cloud_buffered
+
+def cloud_mask_L1C(file_L1C, buffer_size = 8):
     
     print('Making cloud mask...')
     

@@ -1,3 +1,25 @@
+# About this fork
+The goal of this fork is to remove the need of large Level-1C (L1C) SAFE files just to get the default cloud mask when running model inference on ACOLITE L2R data.
+
+We can now run the code on a subset of the whole Sentinel-2 scene. To produce the cloud mask for L2R data, I used the powerfull Omnicloudmask package instead.
+
+I was successfull with this conda environment:
+```conda create --name osw_yulun_omni python=3.12 omnicloudmask tensorflow=2.19.1=cuda129py312ha3fd0c4_252 numpy=1.26.4```
+
+Note that I didn't modify the setup.py file so we cannot install it as a package yet.
+
+TODO: 
+- check how the code treat edge pixels, because now the input image may not be a perfect square
+- check why some pixels are still processed even though they are under the cloud mask.
+
+Example:
+```
+from opticallyshallowdeep.run import run_L2R
+run_L2R("acolite_raster_L2R.nc", "folder_out_path")
+```
+
+*OLD README BELLOW*
+
 # Optically-Shallow-Deep 
 
 This python tool delineates optically shallow and deep waters in Sentinel-2 imagery. The tool uses a deep neural network (DNN) that was trained on a diverse set of global images.
