@@ -1,5 +1,7 @@
 # About this fork
-The goal of this fork is to remove the need of large Level-1C (L1C) SAFE files just to get the default cloud mask when running model inference on ACOLITE L2R data.
+The goal of this fork is to remove the need of large Level-1C (L1C) SAFE files just to get the default cloud mask when running model inference on ACOLITE L2R data. According to the original paper, ACOLITE release 20231023.0 was used for generating L2R data. Default settings were used, except:
+"For the processing, MERRA2 credentials were provided and residual glint removal was enabled (dsf_residual_glint_correction=True),
+In addition, we masked out pixels with TOA reflectance > 0.05 in the 1600 nm band after atmospheric correction. " -Yulun Wu
 
 We can now run the code on a subset of the whole Sentinel-2 scene. To produce the cloud mask for L2R data, I used the powerfull Omnicloudmask package instead.
 
