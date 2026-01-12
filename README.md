@@ -6,7 +6,10 @@ In addition, we masked out pixels with TOA reflectance > 0.05 in the 1600 nm ban
 We can now run the code on a subset of the whole Sentinel-2 scene. To produce the cloud mask for L2R data, I used the powerfull Omnicloudmask package instead.
 
 I was successfull with this conda environment:
-```conda create --name osw_yulun_omni python=3.12 omnicloudmask tensorflow=2.19.1=cuda129py312ha3fd0c4_252 numpy=1.26.4```
+```
+conda create --name osw_yulun_omni python=3.12 omnicloudmask tensorflow=2.19.1=cuda129py312ha3fd0c4_252 numpy=1.26.4
+pip install geopandas rasterio==1.3.9 tifffile==2023.8.12 netCDF4 pyproj joblib scipy matplotlib imagecodecs
+```
 
 Note that I didn't modify the setup.py file so we cannot install it as a package yet.
 
